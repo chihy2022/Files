@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Đẩy file GitHub chihy2022</title>
+<title>Đẩy file lên GitHub</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
 <style>
 :root{--bg:#eef2fa;--ink:#0f1b3d;--mute:#5f6b8a;--line:#d7e0f0;--blue:#1d5cff;--soft:#eaf0ff;--dz:#9db3e6;--ok:#14803c;--err:#c62828;--card:#fff}
@@ -51,6 +51,10 @@ summary{cursor:pointer;font-weight:600}
 details ol{padding-left:20px;margin:10px 0 0}
 details li{margin-bottom:6px}
 .empty{color:var(--mute);margin:0}
+.bar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.bar input{margin-top:0;flex:1;min-width:0}
+.bar button{white-space:nowrap}
+button:disabled{opacity:.6;cursor:default}
 body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:none}
 </style>
 </head>
@@ -101,6 +105,16 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
     <p class="empty" id="empty">Chưa có file nào. Link sẽ hiện ở đây để bạn dán vào item.</p>
     <p class="note" id="after" hidden></p>
   </section>
+
+  <section class="card">
+    <h2>File đã đẩy trong repo</h2>
+    <div class="bar">
+      <button type="button" id="ls">Tải danh sách</button>
+      <input type="text" id="q" placeholder="Lọc theo tên…" autocomplete="off" spellcheck="false">
+    </div>
+    <ul id="files"></ul>
+    <p class="empty" id="fempty">Bấm "Tải danh sách" để xem các file đã đẩy và chép link.</p>
+  </section>
 </main>
 
 <script>
@@ -144,6 +158,7 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
     document.body.dataset.mode = m;
     $("mMedia").classList.toggle("on", m === "media"); $("mSecure").classList.toggle("on", m === "secure");
     fill(); $("dzHint").textContent = MODE[m].hint; $("after").hidden = true;
+    tree = []; loaded = false; $("q").value = ""; $("ls").textContent = "Tải danh sách"; drawFiles();
     $("pick").accept = MODE[m].exts.map(x => "." + x).join(",");
   }
   $("mMedia").onclick = () => setMode("media"); $("mSecure").onclick = () => setMode("secure");
@@ -240,6 +255,59 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
     }
     busy = false; $("dz").style.opacity = "";
   }
+
+  /* ---- danh sách file trong repo ---- */
+  const ROOTS = {
+    media: ["images/", "pdf/", "videos/"],
+    secure: ["server/files/", "public/images/", "public/videos/"]
+  };
+  function linkFor(path) {
+    if (mode === "secure") {
+      if (path.startsWith("server/files/")) return "pdf:" + path.slice(13);
+      if (path.startsWith("public/images/")) return "/images/" + path.slice(14);
+      if (path.startsWith("public/videos/")) return "/videos/" + path.slice(14);
+      return path;
+    }
+    return baseUrl() + "/" + path;
+  }
+  const fmt = n => n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+  let tree = [], loaded = false;
+  function drawFiles() {
+    const ul = $("files"), q = $("q").value.trim().toLowerCase(), em = $("fempty");
+    ul.textContent = "";
+    if (!loaded) { em.textContent = 'Bấm "Tải danh sách" để xem các file đã đẩy và chép link.'; em.hidden = false; return; }
+    const items = tree.filter(t => !q || t.path.toLowerCase().includes(q));
+    em.textContent = tree.length ? "Không có file nào khớp." : "Chưa có file nào trong các thư mục của chế độ này.";
+    em.hidden = items.length > 0;
+    items.forEach(t => {
+      const li = document.createElement("li"); li.className = "row";
+      li.innerHTML = '<div class="top"><span class="name"></span><span class="st wait"></span></div><div class="path"></div>';
+      li.querySelector(".name").textContent = t.path.split("/").pop();
+      li.querySelector(".st").textContent = fmt(t.size || 0);
+      li.querySelector(".path").textContent = t.path;
+      showUrl(li, linkFor(t.path));
+      ul.appendChild(li);
+    });
+  }
+  async function loadFiles() {
+    if (!/^[\w.-]+\/[\w.-]+$/.test(F.repo.value.trim()) || !F.token.value.trim()) { alert("Điền Repo (dạng tên/repo) và Token trước."); return; }
+    const btn = $("ls"), br = F.branch.value.trim() || "main";
+    btn.disabled = true; btn.textContent = "Đang tải…";
+    try {
+      const r = await fetch("https://api.github.com/repos/" + F.repo.value.trim() + "/git/trees/" + encodeURIComponent(br) + "?recursive=1", {headers: hdr()});
+      if (!r.ok) throw Object.assign(new Error("http"), {status: r.status});
+      const j = await r.json(), roots = ROOTS[mode];
+      tree = (j.tree || []).filter(t => t.type === "blob" && roots.some(p => t.path.startsWith(p))).sort((a, b) => a.path.localeCompare(b.path));
+      loaded = true; drawFiles();
+      if (j.truncated) { $("fempty").textContent = "Repo quá lớn, danh sách có thể chưa đầy đủ."; $("fempty").hidden = false; }
+    } catch (e) {
+      loaded = false; tree = []; drawFiles();
+      $("fempty").textContent = ERR[e.status] || "Lỗi mạng. Thử lại."; $("fempty").hidden = false;
+    }
+    btn.disabled = false; btn.textContent = "Tải lại danh sách";
+  }
+  $("ls").onclick = loadFiles;
+  $("q").addEventListener("input", drawFiles);
 
   const dz = $("dz"), pick = $("pick");
   dz.onclick = () => pick.click();
