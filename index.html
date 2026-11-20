@@ -72,7 +72,7 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
     <div class="grid">
       <label>Repo (tên-tài-khoản/tên-repo)<input type="text" id="repo" autocomplete="off" spellcheck="false"></label>
       <label>Nhánh<input type="text" id="branch" autocomplete="off" spellcheck="false"></label>
-      <label class="only-media">Địa chỉ gốc để lấy link (để trống = tự lấy GitHub Pages)<input type="text" id="domain" placeholder="https://chihy2022.github.io/Files" autocomplete="off" spellcheck="false"></label>
+      <label>Địa chỉ gốc để lấy link <span class="only-media">(để trống = tự lấy GitHub Pages)</span><span class="only-secure">(địa chỉ web one-a, để link ảnh/video đầy đủ)</span><input type="text" id="domain" autocomplete="off" spellcheck="false"></label>
       <label>Thư mục con (tuỳ chọn)<input type="text" id="sub" placeholder="huong-dan" autocomplete="off" spellcheck="false"></label>
       <label class="full">Token GitHub của repo này<input type="password" id="token" placeholder="github_pat_…" autocomplete="off" spellcheck="false"></label>
     </div>
@@ -144,7 +144,7 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
     ["media", "secure"].forEach(m => KEYS.forEach(k => { if (src[m] && src[m][k]) P[m][k] = src[m][k]; }));
   } catch (e) {}
   const grab = () => KEYS.forEach(k => { P[mode][k] = F[k].value.trim(); });
-  const fill = () => KEYS.forEach(k => { F[k].value = P[mode][k] || ""; });
+  const fill = () => { KEYS.forEach(k => { F[k].value = P[mode][k] || ""; }); F.domain.placeholder = mode === "secure" ? "https://ten-web-one-a.vercel.app" : "https://chihy2022.github.io/Files"; };
   const save = () => {
     grab();
     try { if ($("remember").checked) localStorage.setItem(LS, JSON.stringify(P)); else localStorage.removeItem(LS); } catch (e) {}
@@ -176,12 +176,13 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
     if (!b) { const m = /^([\w.-]+)\/([\w.-]+)$/.exec(F.repo.value.trim()); if (m) b = "https://" + m[1].toLowerCase() + ".github.io/" + m[2]; }
     return b || "https://TÊN.github.io/TÊN-REPO";
   }
+  const site = () => F.domain.value.trim().replace(/\/+$/, "");
   function plan(file) {
     const name = slug(file.name), ext = name.split(".").pop(), sub = cleanSub(F.sub.value), s = sub ? sub + "/" : "";
     if (mode === "secure") {
       if (ext === "pdf") return {path: "server/files/" + s + name, url: "pdf:" + s + name};
-      if (IMG.includes(ext)) return {path: "public/images/" + s + name, url: "/images/" + s + name};
-      return {path: "public/videos/" + s + name, url: "/videos/" + s + name};
+      if (IMG.includes(ext)) return {path: "public/images/" + s + name, url: site() + "/images/" + s + name};
+      return {path: "public/videos/" + s + name, url: site() + "/videos/" + s + name};
     }
     const dir = IMG.includes(ext) ? "images" : ext === "pdf" ? "pdf" : "videos", rel = dir + "/" + s + name;
     return {path: rel, url: baseUrl() + "/" + rel};
@@ -264,8 +265,8 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
   function linkFor(path) {
     if (mode === "secure") {
       if (path.startsWith("server/files/")) return "pdf:" + path.slice(13);
-      if (path.startsWith("public/images/")) return "/images/" + path.slice(14);
-      if (path.startsWith("public/videos/")) return "/videos/" + path.slice(14);
+      if (path.startsWith("public/images/")) return site() + "/images/" + path.slice(14);
+      if (path.startsWith("public/videos/")) return site() + "/videos/" + path.slice(14);
       return path;
     }
     return baseUrl() + "/" + path;
