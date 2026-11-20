@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Đẩy file lên GitHub</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#eef2fa;--ink:#0f1b3d;--mute:#5f6b8a;--line:#d7e0f0;--blue:#1d5cff;--soft:#eaf0ff;--dz:#9db3e6;--ok:#14803c;--err:#c62828;--card:#fff}
+body[data-mode=secure]{--blue:#b4530b;--soft:#fff1e3;--dz:#e5b98e;--bg:#faf3ec;--line:#ecd9c6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
+main{max-width:760px;margin:0 auto;padding:28px 16px 64px}
+h1{font-size:24px;line-height:1.25;margin:0 0 14px;letter-spacing:-.01em}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:16px}
+.seg button{background:transparent;color:var(--mute);padding:10px 8px;border-radius:8px;text-align:left;line-height:1.3}
+.seg button small{display:block;font-weight:500;font-size:12px}
+.seg button.on{background:var(--blue);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.seg{grid-template-columns:1fr}}
+label{display:block;font-size:13px;font-weight:600;color:var(--mute)}
+input[type=text],input[type=password]{display:block;width:100%;margin-top:4px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font:inherit;color:var(--ink);background:#fbfcff}
+input:focus{outline:2px solid var(--dz);border-color:var(--blue)}
+.full{grid-column:1/-1}
+.chk{display:flex;gap:8px;align-items:center;font-weight:500;margin-top:10px}
+.chk input{width:16px;height:16px}
+#dz{border:2px dashed var(--dz);border-radius:14px;background:var(--soft);padding:34px 16px;text-align:center;cursor:pointer;transition:border-color .15s}
+#dz.on,#dz:hover{border-color:var(--blue)}
+#dz b{font-size:17px}
+#dz small{display:block;color:var(--mute);margin-top:4px}
+ul{list-style:none;margin:0;padding:0}
+.row{border-top:1px solid var(--line);padding:12px 0}
+.row:first-child{border-top:0}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.name{font-weight:600;word-break:break-all}
+.st{font-size:13px}
+.st.ok{color:var(--ok)}.st.err{color:var(--err)}.st.wait{color:var(--mute)}
+.path{font-size:12px;color:var(--mute);word-break:break-all}
+.url{display:flex;gap:8px;margin-top:8px}
+.url code{flex:1;min-width:0;padding:8px 10px;background:var(--soft);border-radius:8px;font:13px/1.4 ui-monospace,Consolas,monospace;word-break:break-all}
+button{font:inherit;font-weight:600;border:0;border-radius:9px;padding:8px 14px;background:var(--blue);color:#fff;cursor:pointer}
+button:active{transform:scale(.97)}
+button.ghost{background:var(--soft);color:var(--blue)}
+.note{font-size:13px;color:var(--mute);margin:10px 0 0}
+.warn{background:#fff4e5;border:1px solid #f3d29c;border-radius:10px;padding:10px 12px;font-size:13px;color:#7a4b00;margin-top:12px}
+details{font-size:14px}
+summary{cursor:pointer;font-weight:600}
+details ol{padding-left:20px;margin:10px 0 0}
+details li{margin-bottom:6px}
+.empty{color:var(--mute);margin:0}
+body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:none}
+</style>
+</head>
+<body data-mode="media">
+<main>
+  <h1>Đẩy file lên GitHub</h1>
+
+  <div class="seg" role="tablist">
+    <button type="button" id="mMedia" class="on">Kho media (công khai)<small>Ảnh, video, PDF thường · repo Files</small></button>
+    <button type="button" id="mSecure">PDF nhạy cảm (có phân quyền)<small>Chỉ PDF · vào one-a, deploy lại web</small></button>
+  </div>
+
+  <section class="card">
+    <h2>Cài đặt (làm một lần cho mỗi chế độ)</h2>
+    <div class="grid">
+      <label>Repo (tên-tài-khoản/tên-repo)<input type="text" id="repo" autocomplete="off" spellcheck="false"></label>
+      <label>Nhánh<input type="text" id="branch" autocomplete="off" spellcheck="false"></label>
+      <label class="only-media">Địa chỉ gốc để lấy link (để trống = tự lấy GitHub Pages)<input type="text" id="domain" placeholder="https://chihy2022.github.io/Files" autocomplete="off" spellcheck="false"></label>
+      <label>Thư mục con (tuỳ chọn)<input type="text" id="sub" placeholder="huong-dan" autocomplete="off" spellcheck="false"></label>
+      <label class="full">Token GitHub của repo này<input type="password" id="token" placeholder="github_pat_…" autocomplete="off" spellcheck="false"></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="remember" checked> Nhớ cài đặt trên trình duyệt này</label>
+    <div class="warn only-media">Repo media để <b>Public</b> nên ai có link đều xem được. Đừng đưa tài liệu nhạy cảm vào đây, hãy dùng chế độ PDF nhạy cảm.</div>
+    <div class="warn only-secure">Chế độ này ghi vào repo <b>one-a</b> (trang đang chạy thật). Mỗi file đẩy lên sẽ làm Vercel deploy lại. Muốn thử trước, đổi Nhánh sang một nhánh thử (ví dụ <b>test</b>).</div>
+    <details style="margin-top:12px">
+      <summary>Cách tạo token</summary>
+      <ol>
+        <li>Vào github.com → ảnh đại diện → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b>.</li>
+        <li><b>Repository access</b>: chọn <b>Only select repositories</b> rồi chọn đúng repo của chế độ đang dùng (mỗi chế độ một token riêng).</li>
+        <li><b>Permissions</b> → <b>Repository permissions</b> → <b>Contents</b> chọn <b>Read and write</b>.</li>
+        <li>Bấm <b>Generate token</b>, copy và dán vào ô trên. Token chỉ hiện một lần.</li>
+      </ol>
+    </details>
+  </section>
+
+  <section class="card">
+    <div id="dz" tabindex="0" role="button" aria-label="Chọn file">
+      <b>Kéo thả file vào đây</b> hoặc bấm để chọn
+      <small id="dzHint"></small>
+    </div>
+    <input type="file" id="pick" multiple hidden>
+    <p class="note">Video nặng hơn 95MB: nén trước bằng HandBrake (preset Fast 720p30, bật Web Optimized).</p>
+  </section>
+
+  <section class="card">
+    <h2>Kết quả</h2>
+    <ul id="list"></ul>
+    <p class="empty" id="empty">Chưa có file nào. Link sẽ hiện ở đây để bạn dán vào item.</p>
+    <p class="note" id="after" hidden></p>
+  </section>
+</main>
+
+<script>
+"use strict";
+(function () {
+  const $ = id => document.getElementById(id);
+  const LS = "acacy_gh_uploader", MAXB = 95 * 1024 * 1024;
+  const IMG = ["jpg", "jpeg", "png", "webp", "gif", "svg"], VID = ["mp4", "webm", "mov"];
+  const KEYS = ["repo", "branch", "domain", "sub", "token"];
+  const F = Object.fromEntries(KEYS.map(k => [k, $(k)]));
+  const P = {
+    media: {repo: "chihy2022/Files", branch: "main", domain: "", sub: "", token: ""},
+    secure: {repo: "chihy2022/one-a", branch: "main", domain: "", sub: "", token: ""}
+  };
+  let mode = "media";
+  const MODE = {
+    media: {exts: IMG.concat(VID, ["pdf"]), hint: "Ảnh (jpg, png, webp, gif, svg) · video (mp4, webm, mov) · PDF · tối đa 95MB mỗi file",
+            after: "GitHub Pages cần khoảng 1 phút để cập nhật, sau đó link mới mở được."},
+    secure: {exts: ["pdf"], hint: "Chỉ nhận PDF · lưu riêng trong one-a, chỉ người có quyền xem item mới đọc được · tối đa 95MB",
+             after: "Vercel đang deploy lại one-a (khoảng 1 phút). Sau đó dán link dạng pdf:… vào ô URL của item rồi lưu."}
+  };
+
+  /* ---- nhớ cài đặt (tương thích bản cũ lưu phẳng) ---- */
+  try {
+    const s = JSON.parse(localStorage.getItem(LS) || "{}");
+    const src = s.media || s.secure ? s : {media: s};
+    ["media", "secure"].forEach(m => KEYS.forEach(k => { if (src[m] && src[m][k]) P[m][k] = src[m][k]; }));
+  } catch (e) {}
+  const grab = () => KEYS.forEach(k => { P[mode][k] = F[k].value.trim(); });
+  const fill = () => KEYS.forEach(k => { F[k].value = P[mode][k] || ""; });
+  const save = () => {
+    grab();
+    try { if ($("remember").checked) localStorage.setItem(LS, JSON.stringify(P)); else localStorage.removeItem(LS); } catch (e) {}
+  };
+  KEYS.forEach(k => F[k].addEventListener("input", save));
+  $("remember").addEventListener("change", save);
+
+  function setMode(m) {
+    if (m === mode) return;
+    grab(); mode = m;
+    document.body.dataset.mode = m;
+    $("mMedia").classList.toggle("on", m === "media"); $("mSecure").classList.toggle("on", m === "secure");
+    fill(); $("dzHint").textContent = MODE[m].hint; $("after").hidden = true;
+    $("pick").accept = MODE[m].exts.map(x => "." + x).join(",");
+  }
+  $("mMedia").onclick = () => setMode("media"); $("mSecure").onclick = () => setMode("secure");
+  fill(); $("dzHint").textContent = MODE[mode].hint; $("pick").accept = MODE[mode].exts.map(x => "." + x).join(",");
+
+  /* ---- tên file / đường dẫn ---- */
+  const slug = n => {
+    const m = /\.([A-Za-z0-9]+)$/.exec(n), ext = m ? m[1].toLowerCase() : "", base = n.replace(/\.[^.]*$/, "");
+    const b = base.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "file";
+    return b + "." + ext;
+  };
+  const cleanSub = s => String(s || "").toLowerCase().replace(/[^a-z0-9/_-]+/g, "-").replace(/\/+/g, "/").replace(/^[-/]+|[-/]+$/g, "");
+  function baseUrl() {
+    let b = F.domain.value.trim().replace(/\/+$/, "");
+    if (!b) { const m = /^([\w.-]+)\/([\w.-]+)$/.exec(F.repo.value.trim()); if (m) b = "https://" + m[1].toLowerCase() + ".github.io/" + m[2]; }
+    return b || "https://TÊN.github.io/TÊN-REPO";
+  }
+  function plan(file) {
+    const name = slug(file.name), ext = name.split(".").pop(), sub = cleanSub(F.sub.value), s = sub ? sub + "/" : "";
+    if (mode === "secure") return {path: "server/files/" + s + name, url: "pdf:" + s + name};
+    const dir = IMG.includes(ext) ? "images" : ext === "pdf" ? "pdf" : "videos", rel = dir + "/" + s + name;
+    return {path: rel, url: baseUrl() + "/" + rel};
+  }
+
+  /* ---- GitHub API ---- */
+  const enc = p => p.split("/").map(encodeURIComponent).join("/");
+  const hdr = () => ({Authorization: "Bearer " + F.token.value.trim(), Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"});
+  const ERR = {
+    401: "Token sai hoặc đã hết hạn. Tạo token mới.",
+    403: "Token chưa có quyền ghi. Cần Contents: Read and write.",
+    404: "Không thấy repo hoặc nhánh, hoặc token chưa được cấp cho repo này.",
+    409: "Xung đột khi commit. Thử lại sau vài giây.",
+    422: "GitHub từ chối (kiểm tra tên nhánh)."
+  };
+  const toB64 = f => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = () => no(new Error("read")); r.readAsDataURL(f); });
+
+  async function push(file, p) {
+    const base = "https://api.github.com/repos/" + F.repo.value.trim() + "/contents/" + enc(p.path), br = F.branch.value.trim() || "main";
+    let sha;
+    const g = await fetch(base + "?ref=" + encodeURIComponent(br), {headers: hdr()});
+    if (g.status === 200) sha = (await g.json()).sha;
+    else if (g.status !== 404) throw Object.assign(new Error("http"), {status: g.status});
+    const body = {message: "upload " + p.path, content: await toB64(file), branch: br};
+    if (sha) body.sha = sha;
+    const r = await fetch(base, {method: "PUT", headers: Object.assign({"Content-Type": "application/json"}, hdr()), body: JSON.stringify(body)});
+    if (!r.ok) throw Object.assign(new Error("http"), {status: r.status});
+    return !!sha;
+  }
+
+  /* ---- giao diện ---- */
+  const list = $("list");
+  function addRow(file, p) {
+    const li = document.createElement("li"); li.className = "row";
+    li.innerHTML = '<div class="top"><span class="name"></span><span class="st wait">Đang chờ…</span></div><div class="path"></div>';
+    li.querySelector(".name").textContent = file.name;
+    li.querySelector(".path").textContent = (mode === "secure" ? "one-a › " : "Files › ") + p.path;
+    list.prepend(li); $("empty").hidden = true;
+    return li;
+  }
+  const setSt = (li, t, k) => { const s = li.querySelector(".st"); s.textContent = t; s.className = "st " + k; };
+  function showUrl(li, url) {
+    const d = document.createElement("div"); d.className = "url";
+    const c = document.createElement("code"); c.textContent = url;
+    const b = document.createElement("button"); b.type = "button"; b.className = "ghost"; b.textContent = "Chép link";
+    b.onclick = async () => {
+      try { await navigator.clipboard.writeText(url); }
+      catch (e) { const r = document.createRange(); r.selectNodeContents(c); const s = getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand("copy"); }
+      b.textContent = "Đã chép"; setTimeout(() => { b.textContent = "Chép link"; }, 1500);
+    };
+    d.append(c, b); li.appendChild(d);
+  }
+
+  let busy = false;
+  async function run(files) {
+    if (busy) return;
+    if (!/^[\w.-]+\/[\w.-]+$/.test(F.repo.value.trim()) || !F.token.value.trim()) { alert("Điền Repo (dạng tên/repo) và Token trước."); return; }
+    busy = true; $("dz").style.opacity = ".6";
+    const M = MODE[mode];
+    for (const file of files) {
+      const ext = (file.name.split(".").pop() || "").toLowerCase();
+      const p = plan(file), li = addRow(file, p);
+      if (!M.exts.includes(ext)) { setSt(li, mode === "secure" ? "Chế độ nhạy cảm chỉ nhận PDF. Ảnh và video hãy dùng Kho media." : "Chỉ nhận ảnh, video (mp4, webm, mov) và pdf.", "err"); continue; }
+      if (file.size > MAXB) { setSt(li, "Lớn hơn 95MB. Hãy nén lại rồi thử lại.", "err"); continue; }
+      setSt(li, "Đang đẩy lên GitHub…", "wait");
+      try {
+        const over = await push(file, p);
+        setSt(li, over ? "Xong (đã ghi đè file cùng tên)" : "Xong", "ok");
+        showUrl(li, p.url); $("after").textContent = M.after; $("after").hidden = false;
+      } catch (e) { setSt(li, ERR[e.status] || "Lỗi mạng hoặc file quá lớn. Thử lại.", "err"); }
+    }
+    busy = false; $("dz").style.opacity = "";
+  }
+
+  const dz = $("dz"), pick = $("pick");
+  dz.onclick = () => pick.click();
+  dz.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick.click(); } };
+  pick.onchange = () => { run(Array.from(pick.files)); pick.value = ""; };
+  ["dragenter", "dragover"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("on"); }));
+  ["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("on"); }));
+  dz.addEventListener("drop", e => run(Array.from(e.dataTransfer.files)));
+  addEventListener("dragover", e => e.preventDefault());
+  addEventListener("drop", e => e.preventDefault());
+})();
+</script>
+</body>
+</html>
