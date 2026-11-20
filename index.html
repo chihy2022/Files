@@ -127,7 +127,7 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
   const F = Object.fromEntries(KEYS.map(k => [k, $(k)]));
   const P = {
     media: {repo: "chihy2022/Files", branch: "main", domain: "", sub: "", token: ""},
-    secure: {repo: "chihy2022/one-a", branch: "main", domain: "", sub: "", token: ""}
+    secure: {repo: "chihy2022/one-a", branch: "main", domain: "https://one.acacy.com.vn", sub: "", token: ""}
   };
   let mode = "media";
   const MODE = {
@@ -144,7 +144,7 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
     ["media", "secure"].forEach(m => KEYS.forEach(k => { if (src[m] && src[m][k]) P[m][k] = src[m][k]; }));
   } catch (e) {}
   const grab = () => KEYS.forEach(k => { P[mode][k] = F[k].value.trim(); });
-  const fill = () => { KEYS.forEach(k => { F[k].value = P[mode][k] || ""; }); F.domain.placeholder = mode === "secure" ? "https://ten-web-one-a.vercel.app" : "https://chihy2022.github.io/Files"; };
+  const fill = () => { KEYS.forEach(k => { F[k].value = P[mode][k] || ""; }); F.domain.placeholder = mode === "secure" ? "https://one.acacy.com.vn" : "https://chihy2022.github.io/Files"; };
   const save = () => {
     grab();
     try { if ($("remember").checked) localStorage.setItem(LS, JSON.stringify(P)); else localStorage.removeItem(LS); } catch (e) {}
