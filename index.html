@@ -59,8 +59,8 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
   <h1>Đẩy file lên GitHub</h1>
 
   <div class="seg" role="tablist">
-    <button type="button" id="mMedia" class="on">Kho media (công khai)<small>Ảnh, video, PDF thường · repo Files</small></button>
-    <button type="button" id="mSecure">PDF nhạy cảm (có phân quyền)<small>Chỉ PDF · vào one-a, deploy lại web</small></button>
+    <button type="button" id="mMedia" class="on">Files (công khai)<small>Repo Files · ảnh, video, PDF · tối đa 95MB mỗi file</small></button>
+    <button type="button" id="mSecure">one-a (web chính)<small>Repo one-a · PDF, video, ảnh · tối đa 95MB mỗi file</small></button>
   </div>
 
   <section class="card">
@@ -73,8 +73,8 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
       <label class="full">Token GitHub của repo này<input type="password" id="token" placeholder="github_pat_…" autocomplete="off" spellcheck="false"></label>
     </div>
     <label class="chk"><input type="checkbox" id="remember" checked> Nhớ cài đặt trên trình duyệt này</label>
-    <div class="warn only-media">Repo media để <b>Public</b> nên ai có link đều xem được. Đừng đưa tài liệu nhạy cảm vào đây, hãy dùng chế độ PDF nhạy cảm.</div>
-    <div class="warn only-secure">Chế độ này ghi vào repo <b>one-a</b> (trang đang chạy thật). Mỗi file đẩy lên sẽ làm Vercel deploy lại. Muốn thử trước, đổi Nhánh sang một nhánh thử (ví dụ <b>test</b>).</div>
+    <div class="warn only-media">Repo Files để <b>Public</b> nên ai có link đều xem được. Đừng đưa tài liệu nhạy cảm vào đây, hãy dùng chế độ one-a và chọn PDF.</div>
+    <div class="warn only-secure">Chế độ này ghi vào repo <b>one-a</b> (trang đang chạy thật). Mỗi file đẩy lên sẽ làm Vercel deploy lại. <b>PDF</b> lưu trong server/files và được phân quyền. <b>Video</b> và <b>ảnh</b> lưu trong public nên ai có link đều xem được. Muốn thử trước, đổi Nhánh sang một nhánh thử (ví dụ <b>test</b>).</div>
     <details style="margin-top:12px">
       <summary>Cách tạo token</summary>
       <ol>
@@ -119,8 +119,8 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
   const MODE = {
     media: {exts: IMG.concat(VID, ["pdf"]), hint: "Ảnh (jpg, png, webp, gif, svg) · video (mp4, webm, mov) · PDF · tối đa 95MB mỗi file",
             after: "GitHub Pages cần khoảng 1 phút để cập nhật, sau đó link mới mở được."},
-    secure: {exts: ["pdf"], hint: "Chỉ nhận PDF · lưu riêng trong one-a, chỉ người có quyền xem item mới đọc được · tối đa 95MB",
-             after: "Vercel đang deploy lại one-a (khoảng 1 phút). Sau đó dán link dạng pdf:… vào ô URL của item rồi lưu."}
+    secure: {exts: ["pdf"].concat(VID, IMG), hint: "PDF (phân quyền, vào server/files) · video (vào public/videos) · ảnh (vào public/images) · tối đa 95MB mỗi file",
+             after: "Vercel đang deploy lại one-a (khoảng 1 phút). Sau đó dán link vào ô URL của item rồi lưu."}
   };
 
   /* ---- nhớ cài đặt (tương thích bản cũ lưu phẳng) ---- */
@@ -163,7 +163,11 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
   }
   function plan(file) {
     const name = slug(file.name), ext = name.split(".").pop(), sub = cleanSub(F.sub.value), s = sub ? sub + "/" : "";
-    if (mode === "secure") return {path: "server/files/" + s + name, url: "pdf:" + s + name};
+    if (mode === "secure") {
+      if (ext === "pdf") return {path: "server/files/" + s + name, url: "pdf:" + s + name};
+      if (IMG.includes(ext)) return {path: "public/images/" + s + name, url: "/images/" + s + name};
+      return {path: "public/videos/" + s + name, url: "/videos/" + s + name};
+    }
     const dir = IMG.includes(ext) ? "images" : ext === "pdf" ? "pdf" : "videos", rel = dir + "/" + s + name;
     return {path: rel, url: baseUrl() + "/" + rel};
   }
@@ -225,7 +229,7 @@ body[data-mode=media] .only-secure,body[data-mode=secure] .only-media{display:no
     for (const file of files) {
       const ext = (file.name.split(".").pop() || "").toLowerCase();
       const p = plan(file), li = addRow(file, p);
-      if (!M.exts.includes(ext)) { setSt(li, mode === "secure" ? "Chế độ nhạy cảm chỉ nhận PDF. Ảnh và video hãy dùng Kho media." : "Chỉ nhận ảnh, video (mp4, webm, mov) và pdf.", "err"); continue; }
+      if (!M.exts.includes(ext)) { setSt(li, mode === "secure" ? "Chế độ one-a chỉ nhận PDF, video (mp4, webm, mov) và ảnh." : "Chỉ nhận ảnh, video (mp4, webm, mov) và pdf.", "err"); continue; }
       if (file.size > MAXB) { setSt(li, "Lớn hơn 95MB. Hãy nén lại rồi thử lại.", "err"); continue; }
       setSt(li, "Đang đẩy lên GitHub…", "wait");
       try {
